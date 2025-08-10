@@ -1,0 +1,3 @@
+[submodule "TinyTorch"]
+	path = TinyTorch
+	url = https://github.com/jyizheng/TinyTorch
