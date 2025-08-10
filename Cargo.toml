@@ -1,0 +1,16 @@
+[package]
+name = "rusted_torch"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rand = "0.8"
+ndarray = "0.15"
+
+[lib]
+name = "rusted_torch"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "test_runner"
+path = "src/bin/test_runner.rs"
