@@ -203,4 +203,39 @@ mod tests {
         let y = function::function::swish(&x);
         assert_vec_near(&y.to_list::<f32>(), &[-0.2689, -0.1888, 0.0, 0.3112, 0.7311], 1e-3);
     }
+
+    #[test]
+    fn test_func_cross_entropy_loss() {
+        let input = Tensor::from_array_2d(vec![
+            vec![2.0f32, 1.0, 0.1],
+            vec![0.5, 2.0, 0.3]
+        ]);
+        let target = Tensor::from_array_1d(vec![0i64, 1]);
+        let loss = cross_entropy_loss(&input, &target, LossReduction::Mean);
+        
+        assert!(loss.item::<f32>() > 0.0);
+        assert!(loss.item::<f32>() < 5.0); // Reasonable upper bound
+    }
+
+    #[test]
+    fn test_func_bce_loss() {
+        let input = Tensor::from_array_1d(vec![0.8f32, 0.2, 0.9, 0.1]);
+        let target = Tensor::from_array_1d(vec![1.0f32, 0.0, 1.0, 0.0]);
+        let loss = bce_loss(&input, &target, LossReduction::Mean);
+        
+        assert!(loss.item::<f32>() > 0.0);
+        assert!(loss.item::<f32>() < 1.0);
+    }
+
+    #[test]
+    fn test_func_l1_loss() {
+        let input = Tensor::from_array_1d(vec![1.0f32, 2.0, 3.0, 4.0]);
+        let target = Tensor::from_array_1d(vec![1.5f32, 1.8, 3.2, 3.9]);
+        let loss = l1_loss(&input, &target, LossReduction::None);
+        
+        assert_vec_near(&loss.to_list::<f32>(), &[0.5, 0.2, 0.2, 0.1], 1e-6);
+        
+        let loss_mean = l1_loss(&input, &target, LossReduction::Mean);
+        assert_vec_near(&[loss_mean.item::<f32>()], &[0.25], 1e-6);
+    }
 }

@@ -88,3 +88,91 @@ pub fn nll_loss(input: &Tensor, target: &Tensor, reduction: LossReduction) -> Te
         }
     }
 }
+
+pub fn cross_entropy_loss(input: &Tensor, target: &Tensor, reduction: LossReduction) -> Tensor {
+    if !input.defined() || !target.defined() {
+        return Tensor::new();
+    }
+
+    let log_softmax_input = crate::autograd::function::function::log_softmax(input, 1);
+    nll_loss(&log_softmax_input, target, reduction)
+}
+
+pub fn bce_loss(input: &Tensor, target: &Tensor, reduction: LossReduction) -> Tensor {
+    if !input.defined() || !target.defined() {
+        return Tensor::new();
+    }
+
+    let input_data = input.to_list::<f32>();
+    let target_data = target.to_list::<f32>();
+    
+    if input_data.len() != target_data.len() {
+        return Tensor::new();
+    }
+
+    let losses: Vec<f32> = input_data.iter().zip(target_data.iter())
+        .map(|(&pred, &target)| {
+            let pred_clamped = pred.max(1e-7).min(1.0 - 1e-7);
+            -(target * pred_clamped.ln() + (1.0 - target) * (1.0 - pred_clamped).ln())
+        })
+        .collect();
+
+    match reduction {
+        LossReduction::None => {
+            let shape = input.shape();
+            let options = Options::default().dtype(DType::Float32);
+            match TensorImpl::new_from_data(&losses, &shape, options) {
+                Ok(impl_) => Tensor {
+                    impl_: Some(Rc::new(impl_)),
+                },
+                Err(_) => Tensor::new(),
+            }
+        }
+        LossReduction::Mean => {
+            let mean_val = losses.iter().sum::<f32>() / losses.len() as f32;
+            Tensor::scalar(mean_val)
+        }
+        LossReduction::Sum => {
+            let sum_val = losses.iter().sum::<f32>();
+            Tensor::scalar(sum_val)
+        }
+    }
+}
+
+pub fn l1_loss(input: &Tensor, target: &Tensor, reduction: LossReduction) -> Tensor {
+    if !input.defined() || !target.defined() {
+        return Tensor::new();
+    }
+
+    let input_data = input.to_list::<f32>();
+    let target_data = target.to_list::<f32>();
+    
+    if input_data.len() != target_data.len() {
+        return Tensor::new();
+    }
+
+    let losses: Vec<f32> = input_data.iter().zip(target_data.iter())
+        .map(|(&x, &y)| (x - y).abs())
+        .collect();
+
+    match reduction {
+        LossReduction::None => {
+            let shape = input.shape();
+            let options = Options::default().dtype(DType::Float32);
+            match TensorImpl::new_from_data(&losses, &shape, options) {
+                Ok(impl_) => Tensor {
+                    impl_: Some(Rc::new(impl_)),
+                },
+                Err(_) => Tensor::new(),
+            }
+        }
+        LossReduction::Mean => {
+            let mean_val = losses.iter().sum::<f32>() / losses.len() as f32;
+            Tensor::scalar(mean_val)
+        }
+        LossReduction::Sum => {
+            let sum_val = losses.iter().sum::<f32>();
+            Tensor::scalar(sum_val)
+        }
+    }
+}
