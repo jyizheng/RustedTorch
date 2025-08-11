@@ -175,4 +175,119 @@ mod tests {
         let output_no_training = dropout(&input, p, false);
         assert_eq!(output_no_training.to_list::<f32>(), input.to_list::<f32>());
     }
+
+    #[test]
+    fn test_func_tanh() {
+        let x = Tensor::from_array_1d(vec![-2.0f32, -1.0, 0.0, 1.0, 2.0]);
+        let y = function::function::tanh(&x);
+        assert_vec_near(&y.to_list::<f32>(), &[-0.9640, -0.7616, 0.0, 0.7616, 0.9640], 1e-3);
+    }
+
+    #[test]
+    fn test_func_sigmoid() {
+        let x = Tensor::from_array_1d(vec![-2.0f32, -1.0, 0.0, 1.0, 2.0]);
+        let y = function::function::sigmoid(&x);
+        assert_vec_near(&y.to_list::<f32>(), &[0.1192, 0.2689, 0.5, 0.7311, 0.8808], 1e-3);
+    }
+
+    #[test]
+    fn test_func_leaky_relu() {
+        let x = Tensor::from_array_1d(vec![-2.0f32, -1.0, 0.0, 1.0, 2.0]);
+        let y = function::function::leaky_relu(&x, 0.01);
+        assert_vec_near(&y.to_list::<f32>(), &[-0.02, -0.01, 0.0, 1.0, 2.0], 1e-6);
+    }
+
+    #[test]
+    fn test_func_swish() {
+        let x = Tensor::from_array_1d(vec![-1.0f32, -0.5, 0.0, 0.5, 1.0]);
+        let y = function::function::swish(&x);
+        assert_vec_near(&y.to_list::<f32>(), &[-0.2689, -0.1888, 0.0, 0.3112, 0.7311], 1e-3);
+    }
+
+    #[test]
+    fn test_func_cross_entropy_loss() {
+        let input = Tensor::from_array_2d(vec![
+            vec![2.0f32, 1.0, 0.1],
+            vec![0.5, 2.0, 0.3]
+        ]);
+        let target = Tensor::from_array_1d(vec![0i64, 1]);
+        let loss = cross_entropy_loss(&input, &target, LossReduction::Mean);
+        
+        assert!(loss.item::<f32>() > 0.0);
+        assert!(loss.item::<f32>() < 5.0); // Reasonable upper bound
+    }
+
+    #[test]
+    fn test_func_bce_loss() {
+        let input = Tensor::from_array_1d(vec![0.8f32, 0.2, 0.9, 0.1]);
+        let target = Tensor::from_array_1d(vec![1.0f32, 0.0, 1.0, 0.0]);
+        let loss = bce_loss(&input, &target, LossReduction::Mean);
+        
+        assert!(loss.item::<f32>() > 0.0);
+        assert!(loss.item::<f32>() < 1.0);
+    }
+
+    #[test]
+    fn test_func_l1_loss() {
+        let input = Tensor::from_array_1d(vec![1.0f32, 2.0, 3.0, 4.0]);
+        let target = Tensor::from_array_1d(vec![1.5f32, 1.8, 3.2, 3.9]);
+        let loss = l1_loss(&input, &target, LossReduction::None);
+        
+        assert_vec_near(&loss.to_list::<f32>(), &[0.5, 0.2, 0.2, 0.1], 1e-6);
+        
+        let loss_mean = l1_loss(&input, &target, LossReduction::Mean);
+        assert_vec_near(&[loss_mean.item::<f32>()], &[0.25], 1e-6);
+    }
+
+    #[test]
+    fn test_func_conv2d_basic() {
+        let input = Tensor::from_array_4d(vec![vec![vec![
+            vec![1.0f32, 2.0, 3.0],
+            vec![4.0, 5.0, 6.0],
+            vec![7.0, 8.0, 9.0]
+        ]]]);
+        
+        let weight = Tensor::from_array_4d(vec![vec![vec![
+            vec![1.0f32, 0.0],
+            vec![0.0, 1.0]
+        ]]]);
+        
+        let output = conv2d(&input, &weight, None, (1, 1), (0, 0), (1, 1));
+        
+        assert!(output.defined());
+        assert_eq!(output.shape(), vec![1, 1, 2, 2]);
+        assert_eq!(output.to_list::<f32>(), vec![6.0, 8.0, 12.0, 14.0]);
+    }
+
+    #[test]
+    fn test_func_max_pool2d_basic() {
+        let input = Tensor::from_array_4d(vec![vec![vec![
+            vec![1.0f32, 2.0, 3.0, 4.0],
+            vec![5.0, 6.0, 7.0, 8.0],
+            vec![9.0, 10.0, 11.0, 12.0],
+            vec![13.0, 14.0, 15.0, 16.0]
+        ]]]);
+        
+        let output = max_pool2d(&input, (2, 2), None, (0, 0));
+        
+        assert!(output.defined());
+        assert_eq!(output.shape(), vec![1, 1, 2, 2]);
+        assert_eq!(output.to_list::<f32>(), vec![6.0, 8.0, 14.0, 16.0]);
+    }
+
+    #[test]
+    fn test_func_batch_norm2d_basic() {
+        let input = Tensor::from_array_4d(vec![vec![vec![
+            vec![1.0f32, 2.0],
+            vec![3.0, 4.0]
+        ]]]);
+        
+        let output = batch_norm2d(&input, None, None, None, None, true, 0.1, 1e-5);
+        
+        assert!(output.defined());
+        assert_eq!(output.shape(), vec![1, 1, 2, 2]);
+        
+        let output_data = output.to_list::<f32>();
+        assert!(output_data.iter().all(|&x| x.is_finite()));
+    }
 }

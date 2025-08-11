@@ -5,6 +5,7 @@ use crate::tensor::{
 use rand::Rng;
 use std::rc::Rc;
 
+#[derive(Debug)]
 pub struct Tensor {
     pub impl_: Option<Rc<TensorImpl>>,
 }
@@ -191,6 +192,37 @@ impl Tensor {
             Err(_) => Self::new(),
         }
     }
+    pub fn from_array_4d(data: Vec<Vec<Vec<Vec<f32>>>>) -> Self {
+        if data.is_empty() || data[0].is_empty() || data[0][0].is_empty() {
+            return Self::new();
+        }
+        let dim0 = data.len() as i64;
+        let dim1 = data[0].len() as i64;
+        let dim2 = data[0][0].len() as i64;
+        let dim3 = data[0][0][0].len() as i64;
+        let shape = [dim0, dim1, dim2, dim3];
+        
+        let mut flat_data = Vec::new();
+        for batch in data {
+            for channel in batch {
+                for row in channel {
+                    for val in row {
+                        flat_data.push(val);
+                    }
+                }
+            }
+        }
+        
+        let options = Options::default().dtype(DType::Float32);
+        match TensorImpl::new_from_data(&flat_data, &shape, options) {
+            Ok(impl_) => Self {
+                impl_: Some(Rc::new(impl_)),
+            },
+            Err(_) => Self::new(),
+        }
+    }
+
+
 
     pub fn defined(&self) -> bool {
         self.impl_.is_some()

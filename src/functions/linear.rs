@@ -35,7 +35,3 @@ pub fn dropout(input: &Tensor, p: f32, training: bool) -> Tensor {
         Err(_) => Tensor::new(),
     }
 }
-
-pub fn max_pool2d(_input: &Tensor, _kernel_size: i64, _stride: i64) -> Tensor {
-    Tensor::new()
-}

@@ -20,3 +20,19 @@ pub fn softmax(x: &Tensor, dim: i64) -> Tensor {
 pub fn log_softmax(x: &Tensor, dim: i64) -> Tensor {
     function::function::log_softmax(x, dim)
 }
+
+pub fn tanh(x: &Tensor) -> Tensor {
+    function::function::tanh(x)
+}
+
+pub fn sigmoid(x: &Tensor) -> Tensor {
+    function::function::sigmoid(x)
+}
+
+pub fn leaky_relu(x: &Tensor, negative_slope: f32) -> Tensor {
+    function::function::leaky_relu(x, negative_slope)
+}
+
+pub fn swish(x: &Tensor) -> Tensor {
+    function::function::swish(x)
+}
