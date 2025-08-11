@@ -568,3 +568,65 @@ impl std::ops::Div for &Tensor {
         }
     }
 }
+
+impl std::ops::Add<&Tensor> for Tensor {
+    type Output = Tensor;
+
+    fn add(self, other: &Tensor) -> Tensor {
+        &self + other
+    }
+}
+
+impl std::ops::Mul<&Tensor> for Tensor {
+    type Output = Tensor;
+
+    fn mul(self, other: &Tensor) -> Tensor {
+        &self * other
+    }
+}
+
+impl std::ops::Div<&Tensor> for Tensor {
+    type Output = Tensor;
+
+    fn div(self, other: &Tensor) -> Tensor {
+        &self / other
+    }
+}
+
+impl Tensor {
+    pub fn sqrt(&self) -> Self {
+        if !self.defined() {
+            return Self::new();
+        }
+        
+        let data: Vec<f32> = self.to_list::<f32>().iter()
+            .map(|&x| x.sqrt())
+            .collect();
+        
+        let options = Options::default().dtype(DType::Float32);
+        match TensorImpl::new_from_data(&data, &self.shape(), options) {
+            Ok(impl_) => Self { impl_: Some(Rc::new(impl_)) },
+            Err(_) => Self::new(),
+        }
+    }
+    
+    pub fn max_elementwise(&self, other: &Self) -> Self {
+        if !self.defined() || !other.defined() {
+            return Self::new();
+        }
+        
+        let self_data = self.to_list::<f32>();
+        let other_data = other.to_list::<f32>();
+        
+        let result_data: Vec<f32> = self_data.iter()
+            .zip(other_data.iter())
+            .map(|(&a, &b)| a.max(b))
+            .collect();
+        
+        let options = Options::default().dtype(DType::Float32);
+        match TensorImpl::new_from_data(&result_data, &self.shape(), options) {
+            Ok(impl_) => Self { impl_: Some(Rc::new(impl_)) },
+            Err(_) => Self::new(),
+        }
+    }
+}
