@@ -1,0 +1,32 @@
+[package]
+name = "rusted_torch"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rand = "0.8"
+ndarray = "0.15"
+
+[lib]
+name = "rusted_torch"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "test_runner"
+path = "src/bin/test_runner.rs"
+
+[[example]]
+name = "basic_tensor_operations"
+path = "examples/basic_tensor_operations.rs"
+
+[[example]]
+name = "mathematical_functions"
+path = "examples/mathematical_functions.rs"
+
+[[example]]
+name = "neural_network_basics"
+path = "examples/neural_network_basics.rs"
+
+[[example]]
+name = "autograd_example"
+path = "examples/autograd_example.rs"
