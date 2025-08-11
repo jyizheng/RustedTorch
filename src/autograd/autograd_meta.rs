@@ -1,5 +1,6 @@
 use crate::tensor::Tensor;
 
+#[derive(Debug)]
 pub struct AutogradMeta {
     pub grad: Option<Tensor>,
     requires_grad: bool,
