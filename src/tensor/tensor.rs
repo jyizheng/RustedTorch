@@ -339,6 +339,93 @@ impl Tensor {
     pub fn zero_grad(&mut self) {
     }
 
+    pub fn matmul(&self, other: &Self) -> Self {
+        if !self.defined() || !other.defined() {
+            return Self::new();
+        }
+
+        let self_shape = self.shape();
+        let other_shape = other.shape();
+        
+        if self_shape.len() == 2 && other_shape.len() == 2 {
+            let m = self_shape[0] as usize;
+            let k = self_shape[1] as usize;
+            let n = other_shape[1] as usize;
+            
+            if k != other_shape[0] as usize {
+                return Self::new(); // Incompatible dimensions
+            }
+            
+            let self_data = self.to_list::<f32>();
+            let other_data = other.to_list::<f32>();
+            let mut result = vec![0.0f32; m * n];
+            
+            for i in 0..m {
+                for j in 0..n {
+                    for k_idx in 0..k {
+                        result[i * n + j] += self_data[i * k + k_idx] * other_data[k_idx * n + j];
+                    }
+                }
+            }
+            
+            let result_shape = [m as i64, n as i64];
+            let options = Options::default().dtype(DType::Float32);
+            match TensorImpl::new_from_data(&result, &result_shape, options) {
+                Ok(impl_) => Self {
+                    impl_: Some(Rc::new(impl_)),
+                },
+                Err(_) => Self::new(),
+            }
+        } else {
+            Self::new() // Only 2D matmul supported for now
+        }
+    }
+
+    pub fn transpose(&self, dim0: i64, dim1: i64) -> Self {
+        if !self.defined() {
+            return Self::new();
+        }
+        
+        let shape = self.shape();
+        if shape.len() != 2 || dim0 != 0 || dim1 != 1 {
+            return self.clone(); // Only 2D transpose supported for now
+        }
+        
+        let rows = shape[0] as usize;
+        let cols = shape[1] as usize;
+        let data = self.to_list::<f32>();
+        let mut transposed = vec![0.0f32; rows * cols];
+        
+        for i in 0..rows {
+            for j in 0..cols {
+                transposed[j * rows + i] = data[i * cols + j];
+            }
+        }
+        
+        let new_shape = [cols as i64, rows as i64];
+        let options = Options::default().dtype(DType::Float32);
+        match TensorImpl::new_from_data(&transposed, &new_shape, options) {
+            Ok(impl_) => Self {
+                impl_: Some(Rc::new(impl_)),
+            },
+            Err(_) => Self::new(),
+        }
+    }
+
+    pub fn reshape(&self, shape: &[i64]) -> Self {
+        if !self.defined() {
+            return Self::new();
+        }
+        
+        let mut new_tensor = self.clone();
+        let _ = new_tensor.reshape_(shape);
+        new_tensor
+    }
+
+    pub fn size(&self) -> i64 {
+        self.numel()
+    }
+
     pub fn new_from_impl(impl_: Rc<TensorImpl>) -> Self {
         Self {
             impl_: Some(impl_),
@@ -404,6 +491,32 @@ impl std::ops::Add for &Tensor {
     }
 }
 
+impl std::ops::Sub for &Tensor {
+    type Output = Tensor;
+
+    fn sub(self, other: &Tensor) -> Tensor {
+        if !self.defined() || !other.defined() {
+            return Tensor::new();
+        }
+
+        let self_data = self.to_list::<f32>();
+        let other_data = other.to_list::<f32>();
+        
+        let result_data: Vec<f32> = self_data.iter().zip(other_data.iter())
+            .map(|(&a, &b)| a - b)
+            .collect();
+
+        let shape = self.shape();
+        let options = Options::default().dtype(DType::Float32);
+        match TensorImpl::new_from_data(&result_data, &shape, options) {
+            Ok(impl_) => Tensor {
+                impl_: Some(Rc::new(impl_)),
+            },
+            Err(_) => Tensor::new(),
+        }
+    }
+}
+
 impl std::ops::Mul for &Tensor {
     type Output = Tensor;
 
@@ -417,6 +530,32 @@ impl std::ops::Mul for &Tensor {
         
         let result_data: Vec<f32> = self_data.iter().zip(other_data.iter())
             .map(|(&a, &b)| a * b)
+            .collect();
+
+        let shape = self.shape();
+        let options = Options::default().dtype(DType::Float32);
+        match TensorImpl::new_from_data(&result_data, &shape, options) {
+            Ok(impl_) => Tensor {
+                impl_: Some(Rc::new(impl_)),
+            },
+            Err(_) => Tensor::new(),
+        }
+    }
+}
+
+impl std::ops::Div for &Tensor {
+    type Output = Tensor;
+
+    fn div(self, other: &Tensor) -> Tensor {
+        if !self.defined() || !other.defined() {
+            return Tensor::new();
+        }
+
+        let self_data = self.to_list::<f32>();
+        let other_data = other.to_list::<f32>();
+        
+        let result_data: Vec<f32> = self_data.iter().zip(other_data.iter())
+            .map(|(&a, &b)| if b != 0.0 { a / b } else { 0.0 })
             .collect();
 
         let shape = self.shape();
