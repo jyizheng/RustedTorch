@@ -39,6 +39,10 @@ impl Options {
         self
     }
 
+    pub fn requires_grad_value(&self) -> bool {
+        self.requires_grad
+    }
+
     pub fn pinned_memory(mut self, pinned_memory: bool) -> Self {
         self.pinned_memory = pinned_memory;
         self

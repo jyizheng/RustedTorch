@@ -46,4 +46,43 @@ mod tests {
         
         assert_eq!(y.to_list::<f32>(), vec![1.0, 4.0, 9.0, 16.0]);
     }
+
+    #[test]
+    fn test_autograd_meta_backward() {
+        let options = Options::new().requires_grad(true);
+        let tensor = Tensor::empty_with_options(&[2, 2], options);
+        let grad = Tensor::ones(&[2, 2]);
+        
+        tensor.backward_with_grad(&grad);
+        let retrieved_grad = tensor.grad();
+        assert!(retrieved_grad.defined());
+    }
+
+    #[test]
+    fn test_gradient_accumulation() {
+        let options = Options::new().requires_grad(true);
+        let tensor = Tensor::empty_with_options(&[2, 2], options);
+        let grad1 = Tensor::ones(&[2, 2]);
+        let grad2 = Tensor::ones(&[2, 2]);
+        
+        tensor.backward_with_grad(&grad1);
+        tensor.backward_with_grad(&grad2);
+        
+        let accumulated_grad = tensor.grad();
+        assert!(accumulated_grad.defined());
+        assert_eq!(accumulated_grad.to_list::<f32>(), vec![2.0, 2.0, 2.0, 2.0]);
+    }
+
+    #[test]
+    fn test_zero_grad() {
+        let options = Options::new().requires_grad(true);
+        let mut tensor = Tensor::empty_with_options(&[2, 2], options);
+        let grad = Tensor::ones(&[2, 2]);
+        
+        tensor.backward_with_grad(&grad);
+        assert!(tensor.grad().defined());
+        
+        tensor.zero_grad();
+        assert!(!tensor.grad().defined());
+    }
 }

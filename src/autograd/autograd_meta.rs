@@ -1,7 +1,7 @@
 use crate::tensor::Tensor;
 
 pub struct AutogradMeta {
-    grad: Option<Tensor>,
+    pub grad: Option<Tensor>,
     requires_grad: bool,
 }
 
@@ -48,7 +48,12 @@ impl AutogradMeta {
         true
     }
 
-    pub fn backward(&mut self, _grad: &Tensor) {
+    pub fn backward(&mut self, grad: &Tensor) {
+        if !self.requires_grad {
+            return;
+        }
+        
+        self.add_grad(grad.clone());
     }
 }
 

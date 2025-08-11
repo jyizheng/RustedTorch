@@ -324,19 +324,46 @@ impl Tensor {
     }
 
     pub fn backward(&self) {
+        let grad = Tensor::ones_like(self);
+        self.backward_with_grad(&grad);
     }
 
-    pub fn backward_with_grad(&self, _grad: &Self) {
+    pub fn backward_with_grad(&self, grad: &Self) {
+        if let Some(ref impl_) = self.impl_ {
+            if let Some(ref autograd_meta) = impl_.autograd_meta {
+                let mut meta = autograd_meta.borrow_mut();
+                meta.add_grad(grad.clone());
+            }
+        }
     }
 
-    pub fn set_requires_grad(&mut self, _requires_grad: bool) {
+    pub fn set_requires_grad(&mut self, requires_grad: bool) {
+        if let Some(ref mut impl_) = self.impl_ {
+            if let Some(impl_mut) = Rc::get_mut(impl_) {
+                impl_mut.set_requires_grad(requires_grad);
+            }
+        }
     }
 
     pub fn grad(&self) -> Self {
+        if let Some(ref impl_) = self.impl_ {
+            if let Some(ref autograd_meta) = impl_.autograd_meta {
+                let meta = autograd_meta.borrow();
+                if let Some(ref grad) = meta.grad {
+                    return grad.clone();
+                }
+            }
+        }
         Self::new()
     }
 
     pub fn zero_grad(&mut self) {
+        if let Some(ref impl_) = self.impl_ {
+            if let Some(ref autograd_meta) = impl_.autograd_meta {
+                let mut meta = autograd_meta.borrow_mut();
+                meta.zero_grad();
+            }
+        }
     }
 
     pub fn matmul(&self, other: &Self) -> Self {
@@ -473,14 +500,37 @@ impl std::ops::Add for &Tensor {
             return Tensor::new();
         }
 
-        let self_data = self.to_list::<f32>();
-        let other_data = other.to_list::<f32>();
+        let self_shape = self.shape();
+        let other_shape = other.shape();
+        
+        let result_shape = match crate::tensor::broadcasting::broadcast_shapes(&self_shape, &other_shape) {
+            Ok(shape) => shape,
+            Err(_) => return Tensor::new(),
+        };
+        
+        let self_data = if self_shape == result_shape {
+            self.to_list::<f32>()
+        } else {
+            match crate::tensor::broadcasting::broadcast_tensor_data(&self.to_list::<f32>(), &self_shape, &result_shape) {
+                Ok(data) => data,
+                Err(_) => return Tensor::new(),
+            }
+        };
+        
+        let other_data = if other_shape == result_shape {
+            other.to_list::<f32>()
+        } else {
+            match crate::tensor::broadcasting::broadcast_tensor_data(&other.to_list::<f32>(), &other_shape, &result_shape) {
+                Ok(data) => data,
+                Err(_) => return Tensor::new(),
+            }
+        };
         
         let result_data: Vec<f32> = self_data.iter().zip(other_data.iter())
             .map(|(&a, &b)| a + b)
             .collect();
 
-        let shape = self.shape();
+        let shape = result_shape;
         let options = Options::default().dtype(DType::Float32);
         match TensorImpl::new_from_data(&result_data, &shape, options) {
             Ok(impl_) => Tensor {
@@ -499,14 +549,37 @@ impl std::ops::Sub for &Tensor {
             return Tensor::new();
         }
 
-        let self_data = self.to_list::<f32>();
-        let other_data = other.to_list::<f32>();
+        let self_shape = self.shape();
+        let other_shape = other.shape();
+        
+        let result_shape = match crate::tensor::broadcasting::broadcast_shapes(&self_shape, &other_shape) {
+            Ok(shape) => shape,
+            Err(_) => return Tensor::new(),
+        };
+        
+        let self_data = if self_shape == result_shape {
+            self.to_list::<f32>()
+        } else {
+            match crate::tensor::broadcasting::broadcast_tensor_data(&self.to_list::<f32>(), &self_shape, &result_shape) {
+                Ok(data) => data,
+                Err(_) => return Tensor::new(),
+            }
+        };
+        
+        let other_data = if other_shape == result_shape {
+            other.to_list::<f32>()
+        } else {
+            match crate::tensor::broadcasting::broadcast_tensor_data(&other.to_list::<f32>(), &other_shape, &result_shape) {
+                Ok(data) => data,
+                Err(_) => return Tensor::new(),
+            }
+        };
         
         let result_data: Vec<f32> = self_data.iter().zip(other_data.iter())
             .map(|(&a, &b)| a - b)
             .collect();
 
-        let shape = self.shape();
+        let shape = result_shape;
         let options = Options::default().dtype(DType::Float32);
         match TensorImpl::new_from_data(&result_data, &shape, options) {
             Ok(impl_) => Tensor {
@@ -525,14 +598,37 @@ impl std::ops::Mul for &Tensor {
             return Tensor::new();
         }
 
-        let self_data = self.to_list::<f32>();
-        let other_data = other.to_list::<f32>();
+        let self_shape = self.shape();
+        let other_shape = other.shape();
+        
+        let result_shape = match crate::tensor::broadcasting::broadcast_shapes(&self_shape, &other_shape) {
+            Ok(shape) => shape,
+            Err(_) => return Tensor::new(),
+        };
+        
+        let self_data = if self_shape == result_shape {
+            self.to_list::<f32>()
+        } else {
+            match crate::tensor::broadcasting::broadcast_tensor_data(&self.to_list::<f32>(), &self_shape, &result_shape) {
+                Ok(data) => data,
+                Err(_) => return Tensor::new(),
+            }
+        };
+        
+        let other_data = if other_shape == result_shape {
+            other.to_list::<f32>()
+        } else {
+            match crate::tensor::broadcasting::broadcast_tensor_data(&other.to_list::<f32>(), &other_shape, &result_shape) {
+                Ok(data) => data,
+                Err(_) => return Tensor::new(),
+            }
+        };
         
         let result_data: Vec<f32> = self_data.iter().zip(other_data.iter())
             .map(|(&a, &b)| a * b)
             .collect();
 
-        let shape = self.shape();
+        let shape = result_shape;
         let options = Options::default().dtype(DType::Float32);
         match TensorImpl::new_from_data(&result_data, &shape, options) {
             Ok(impl_) => Tensor {
@@ -551,14 +647,37 @@ impl std::ops::Div for &Tensor {
             return Tensor::new();
         }
 
-        let self_data = self.to_list::<f32>();
-        let other_data = other.to_list::<f32>();
+        let self_shape = self.shape();
+        let other_shape = other.shape();
+        
+        let result_shape = match crate::tensor::broadcasting::broadcast_shapes(&self_shape, &other_shape) {
+            Ok(shape) => shape,
+            Err(_) => return Tensor::new(),
+        };
+        
+        let self_data = if self_shape == result_shape {
+            self.to_list::<f32>()
+        } else {
+            match crate::tensor::broadcasting::broadcast_tensor_data(&self.to_list::<f32>(), &self_shape, &result_shape) {
+                Ok(data) => data,
+                Err(_) => return Tensor::new(),
+            }
+        };
+        
+        let other_data = if other_shape == result_shape {
+            other.to_list::<f32>()
+        } else {
+            match crate::tensor::broadcasting::broadcast_tensor_data(&other.to_list::<f32>(), &other_shape, &result_shape) {
+                Ok(data) => data,
+                Err(_) => return Tensor::new(),
+            }
+        };
         
         let result_data: Vec<f32> = self_data.iter().zip(other_data.iter())
             .map(|(&a, &b)| if b != 0.0 { a / b } else { 0.0 })
             .collect();
 
-        let shape = self.shape();
+        let shape = result_shape;
         let options = Options::default().dtype(DType::Float32);
         match TensorImpl::new_from_data(&result_data, &shape, options) {
             Ok(impl_) => Tensor {

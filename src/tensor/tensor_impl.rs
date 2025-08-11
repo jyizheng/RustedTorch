@@ -1,5 +1,7 @@
 use crate::tensor::{check_dtype_match, Device, DType, Options, Storage, TypeToDType};
+use crate::autograd::AutogradMeta;
 use std::rc::Rc;
+use std::cell::RefCell;
 
 pub type IntArrayView = [i64];
 pub type SizeVector = Vec<i64>;
@@ -11,10 +13,17 @@ pub struct TensorImpl {
     storage_offset: i64,
     options: Options,
     storage: Option<Rc<Storage>>,
+    pub autograd_meta: Option<Rc<RefCell<AutogradMeta>>>,
 }
 
 impl TensorImpl {
     pub fn new(shape: &IntArrayView, options: Options) -> Result<Self, String> {
+        let autograd_meta = if options.requires_grad_value() {
+            Some(Rc::new(RefCell::new(AutogradMeta::new())))
+        } else {
+            None
+        };
+
         let mut impl_ = Self {
             shape: shape.to_vec(),
             strides: Vec::new(),
@@ -22,6 +31,7 @@ impl TensorImpl {
             storage_offset: 0,
             options,
             storage: None,
+            autograd_meta,
         };
 
         Self::compute_strides(&mut impl_.strides, &impl_.shape);
@@ -37,6 +47,12 @@ impl TensorImpl {
         storage: Rc<Storage>,
         offset: i64,
     ) -> Result<Self, String> {
+        let autograd_meta = if options.requires_grad_value() {
+            Some(Rc::new(RefCell::new(AutogradMeta::new())))
+        } else {
+            None
+        };
+
         let mut impl_ = Self {
             shape: shape.to_vec(),
             strides: Vec::new(),
@@ -44,6 +60,7 @@ impl TensorImpl {
             storage_offset: offset,
             options,
             storage: Some(storage),
+            autograd_meta,
         };
 
         Self::compute_strides(&mut impl_.strides, &impl_.shape);
@@ -285,6 +302,15 @@ impl TensorImpl {
         Ok(())
     }
 
+    pub fn set_requires_grad(&mut self, requires_grad: bool) {
+        if requires_grad && self.autograd_meta.is_none() {
+            self.autograd_meta = Some(Rc::new(RefCell::new(AutogradMeta::new())));
+        }
+        if let Some(ref autograd_meta) = self.autograd_meta {
+            autograd_meta.borrow_mut().set_requires_grad(requires_grad);
+        }
+    }
+
     fn compute_strides(strides: &mut SizeVector, shape: &[i64]) {
         strides.clear();
         strides.resize(shape.len(), 1);
@@ -310,6 +336,7 @@ impl Default for TensorImpl {
             storage_offset: 0,
             options: Options::default(),
             storage: None,
+            autograd_meta: None,
         }
     }
 }
