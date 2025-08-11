@@ -52,7 +52,7 @@ impl Storage {
     }
 
     pub fn copy_from_slice<T>(&mut self, src: &[T]) -> Result<(), String> {
-        let src_size = src.len() * std::mem::size_of::<T>();
+        let src_size = std::mem::size_of_val(src);
         if src_size > self.size {
             return Err("Source data too large for storage".to_string());
         }
@@ -72,7 +72,7 @@ impl Storage {
     }
 
     pub fn copy_to_slice<T>(&self, dst: &mut [T]) -> Result<(), String> {
-        let dst_size = dst.len() * std::mem::size_of::<T>();
+        let dst_size = std::mem::size_of_val(dst);
         if dst_size > self.size {
             return Err("Destination slice too large".to_string());
         }

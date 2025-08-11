@@ -229,7 +229,7 @@ impl Tensor {
     }
 
     pub fn dim(&self) -> i64 {
-        self.impl_.as_ref().map_or(0, |impl_| impl_.dim())
+        self.impl_.as_ref().map_or(0, |impl_| impl_.dim()) // unchanged
     }
 
     pub fn numel(&self) -> i64 {
@@ -257,7 +257,7 @@ impl Tensor {
     }
 
     pub fn requires_grad(&self) -> bool {
-        self.impl_.as_ref().map_or(false, |impl_| impl_.requires_grad())
+        self.impl_.as_ref().is_some_and(|impl_| impl_.requires_grad())
     }
 
     pub fn to_list<T: TypeToDType + Clone + Default>(&self) -> Vec<T> {

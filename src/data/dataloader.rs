@@ -45,7 +45,7 @@ impl<D: Dataset> DataLoader<D> {
         if self.drop_last {
             self.dataset.len() / self.batch_size
         } else {
-            (self.dataset.len() + self.batch_size - 1) / self.batch_size
+            self.dataset.len().div_ceil(self.batch_size)
         }
     }
     
@@ -122,20 +122,9 @@ impl<D: Dataset> DataLoader<D> {
             Err(_) => return None,
         };
         
-        let batched_targets = if batched_target_shape.len() == 1 {
-            match TensorImpl::new_from_data(&batch_targets, &batched_target_shape, options) {
-                Ok(impl_) => Tensor {
-                    impl_: Some(Rc::new(impl_)),
-                },
-                Err(_) => return None,
-            }
-        } else {
-            match TensorImpl::new_from_data(&batch_targets, &batched_target_shape, options) {
-                Ok(impl_) => Tensor {
-                    impl_: Some(Rc::new(impl_)),
-                },
-                Err(_) => return None,
-            }
+        let batched_targets = match TensorImpl::new_from_data(&batch_targets, &batched_target_shape, options) {
+            Ok(impl_) => Tensor { impl_: Some(Rc::new(impl_)) },
+            Err(_) => return None,
         };
         
         self.current_batch += 1;

@@ -96,11 +96,11 @@ impl Adam {
         let mut d_p = grad.clone();
         
         if self.config.weight_decay != 0.0 {
-            d_p = &d_p + &(&*param * &Tensor::scalar(self.config.weight_decay));
+            d_p = &d_p + &(param * &Tensor::scalar(self.config.weight_decay));
         }
         
-        if !self.exp_avg.contains_key(&param_id) {
-            self.exp_avg.insert(param_id, Tensor::zeros_like(param));
+        if let std::collections::hash_map::Entry::Vacant(e) = self.exp_avg.entry(param_id) {
+            e.insert(Tensor::zeros_like(param));
             self.exp_avg_sq.insert(param_id, Tensor::zeros_like(param));
             if self.config.amsgrad {
                 self.max_exp_avg_sq.insert(param_id, Tensor::zeros_like(param));

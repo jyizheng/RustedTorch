@@ -78,7 +78,7 @@ impl SGD {
         let mut d_p = grad.clone();
         
         if self.config.weight_decay != 0.0 {
-            d_p = &d_p + &(&*param * &Tensor::scalar(self.config.weight_decay));
+            d_p = &d_p + &(param * &Tensor::scalar(self.config.weight_decay));
         }
         
         if self.config.momentum != 0.0 {

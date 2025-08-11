@@ -86,8 +86,8 @@ impl AdamW {
     fn compute_update_from_grad(&mut self, param: &Tensor, grad: &Tensor, param_id: usize) -> Option<Tensor> {
         let d_p = grad.clone();
         
-        if !self.exp_avg.contains_key(&param_id) {
-            self.exp_avg.insert(param_id, Tensor::zeros_like(param));
+        if let std::collections::hash_map::Entry::Vacant(e) = self.exp_avg.entry(param_id) {
+            e.insert(Tensor::zeros_like(param));
             self.exp_avg_sq.insert(param_id, Tensor::zeros_like(param));
         }
         
