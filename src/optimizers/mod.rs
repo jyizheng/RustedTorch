@@ -1,8 +1,10 @@
 pub mod sgd;
 pub mod adam;
+pub mod adamw;
 
 pub use sgd::*;
 pub use adam::*;
+pub use adamw::*;
 
 pub trait Optimizer {
     fn step(&mut self);
