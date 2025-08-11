@@ -251,4 +251,82 @@ pub mod function {
             Err(_) => Tensor::new(),
         }
     }
+
+    pub fn tanh(x: &Tensor) -> Tensor {
+        if !x.defined() {
+            return Tensor::new();
+        }
+
+        let data = x.to_list::<f32>();
+        let result_data: Vec<f32> = data.iter().map(|&val| val.tanh()).collect();
+
+        let shape = x.shape();
+        let options = crate::tensor::Options::default().dtype(crate::tensor::DType::Float32);
+        match crate::tensor::TensorImpl::new_from_data(&result_data, &shape, options) {
+            Ok(impl_) => Tensor {
+                impl_: Some(std::rc::Rc::new(impl_)),
+            },
+            Err(_) => Tensor::new(),
+        }
+    }
+
+    pub fn sigmoid(x: &Tensor) -> Tensor {
+        if !x.defined() {
+            return Tensor::new();
+        }
+
+        let data = x.to_list::<f32>();
+        let result_data: Vec<f32> = data.iter().map(|&val| {
+            1.0 / (1.0 + (-val).exp())
+        }).collect();
+
+        let shape = x.shape();
+        let options = crate::tensor::Options::default().dtype(crate::tensor::DType::Float32);
+        match crate::tensor::TensorImpl::new_from_data(&result_data, &shape, options) {
+            Ok(impl_) => Tensor {
+                impl_: Some(std::rc::Rc::new(impl_)),
+            },
+            Err(_) => Tensor::new(),
+        }
+    }
+
+    pub fn leaky_relu(x: &Tensor, negative_slope: f32) -> Tensor {
+        if !x.defined() {
+            return Tensor::new();
+        }
+
+        let data = x.to_list::<f32>();
+        let result_data: Vec<f32> = data.iter().map(|&val| {
+            if val > 0.0 { val } else { negative_slope * val }
+        }).collect();
+
+        let shape = x.shape();
+        let options = crate::tensor::Options::default().dtype(crate::tensor::DType::Float32);
+        match crate::tensor::TensorImpl::new_from_data(&result_data, &shape, options) {
+            Ok(impl_) => Tensor {
+                impl_: Some(std::rc::Rc::new(impl_)),
+            },
+            Err(_) => Tensor::new(),
+        }
+    }
+
+    pub fn swish(x: &Tensor) -> Tensor {
+        if !x.defined() {
+            return Tensor::new();
+        }
+
+        let data = x.to_list::<f32>();
+        let result_data: Vec<f32> = data.iter().map(|&val| {
+            val / (1.0 + (-val).exp())
+        }).collect();
+
+        let shape = x.shape();
+        let options = crate::tensor::Options::default().dtype(crate::tensor::DType::Float32);
+        match crate::tensor::TensorImpl::new_from_data(&result_data, &shape, options) {
+            Ok(impl_) => Tensor {
+                impl_: Some(std::rc::Rc::new(impl_)),
+            },
+            Err(_) => Tensor::new(),
+        }
+    }
 }

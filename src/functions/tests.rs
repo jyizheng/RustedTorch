@@ -175,4 +175,32 @@ mod tests {
         let output_no_training = dropout(&input, p, false);
         assert_eq!(output_no_training.to_list::<f32>(), input.to_list::<f32>());
     }
+
+    #[test]
+    fn test_func_tanh() {
+        let x = Tensor::from_array_1d(vec![-2.0f32, -1.0, 0.0, 1.0, 2.0]);
+        let y = function::function::tanh(&x);
+        assert_vec_near(&y.to_list::<f32>(), &[-0.9640, -0.7616, 0.0, 0.7616, 0.9640], 1e-3);
+    }
+
+    #[test]
+    fn test_func_sigmoid() {
+        let x = Tensor::from_array_1d(vec![-2.0f32, -1.0, 0.0, 1.0, 2.0]);
+        let y = function::function::sigmoid(&x);
+        assert_vec_near(&y.to_list::<f32>(), &[0.1192, 0.2689, 0.5, 0.7311, 0.8808], 1e-3);
+    }
+
+    #[test]
+    fn test_func_leaky_relu() {
+        let x = Tensor::from_array_1d(vec![-2.0f32, -1.0, 0.0, 1.0, 2.0]);
+        let y = function::function::leaky_relu(&x, 0.01);
+        assert_vec_near(&y.to_list::<f32>(), &[-0.02, -0.01, 0.0, 1.0, 2.0], 1e-6);
+    }
+
+    #[test]
+    fn test_func_swish() {
+        let x = Tensor::from_array_1d(vec![-1.0f32, -0.5, 0.0, 0.5, 1.0]);
+        let y = function::function::swish(&x);
+        assert_vec_near(&y.to_list::<f32>(), &[-0.2689, -0.1888, 0.0, 0.3112, 0.7311], 1e-3);
+    }
 }
