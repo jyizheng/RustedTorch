@@ -2,6 +2,7 @@ use crate::tensor::Device;
 use std::alloc::{alloc, dealloc, Layout};
 use std::ptr::NonNull;
 
+#[derive(Debug)]
 pub struct Storage {
     data: NonNull<u8>,
     size: usize,

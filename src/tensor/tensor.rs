@@ -5,6 +5,7 @@ use crate::tensor::{
 use rand::Rng;
 use std::rc::Rc;
 
+#[derive(Debug)]
 pub struct Tensor {
     pub impl_: Option<Rc<TensorImpl>>,
 }

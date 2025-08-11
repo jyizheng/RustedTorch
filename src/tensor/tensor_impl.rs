@@ -4,6 +4,7 @@ use std::rc::Rc;
 pub type IntArrayView = [i64];
 pub type SizeVector = Vec<i64>;
 
+#[derive(Debug)]
 pub struct TensorImpl {
     shape: SizeVector,
     strides: SizeVector,
