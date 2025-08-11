@@ -238,4 +238,56 @@ mod tests {
         let loss_mean = l1_loss(&input, &target, LossReduction::Mean);
         assert_vec_near(&[loss_mean.item::<f32>()], &[0.25], 1e-6);
     }
+
+    #[test]
+    fn test_func_conv2d_basic() {
+        let input = Tensor::from_array_4d(vec![vec![vec![
+            vec![1.0f32, 2.0, 3.0],
+            vec![4.0, 5.0, 6.0],
+            vec![7.0, 8.0, 9.0]
+        ]]]);
+        
+        let weight = Tensor::from_array_4d(vec![vec![vec![
+            vec![1.0f32, 0.0],
+            vec![0.0, 1.0]
+        ]]]);
+        
+        let output = conv2d(&input, &weight, None, (1, 1), (0, 0), (1, 1));
+        
+        assert!(output.defined());
+        assert_eq!(output.shape(), vec![1, 1, 2, 2]);
+        assert_eq!(output.to_list::<f32>(), vec![6.0, 8.0, 12.0, 14.0]);
+    }
+
+    #[test]
+    fn test_func_max_pool2d_basic() {
+        let input = Tensor::from_array_4d(vec![vec![vec![
+            vec![1.0f32, 2.0, 3.0, 4.0],
+            vec![5.0, 6.0, 7.0, 8.0],
+            vec![9.0, 10.0, 11.0, 12.0],
+            vec![13.0, 14.0, 15.0, 16.0]
+        ]]]);
+        
+        let output = max_pool2d(&input, (2, 2), None, (0, 0));
+        
+        assert!(output.defined());
+        assert_eq!(output.shape(), vec![1, 1, 2, 2]);
+        assert_eq!(output.to_list::<f32>(), vec![6.0, 8.0, 14.0, 16.0]);
+    }
+
+    #[test]
+    fn test_func_batch_norm2d_basic() {
+        let input = Tensor::from_array_4d(vec![vec![vec![
+            vec![1.0f32, 2.0],
+            vec![3.0, 4.0]
+        ]]]);
+        
+        let output = batch_norm2d(&input, None, None, None, None, true, 0.1, 1e-5);
+        
+        assert!(output.defined());
+        assert_eq!(output.shape(), vec![1, 1, 2, 2]);
+        
+        let output_data = output.to_list::<f32>();
+        assert!(output_data.iter().all(|&x| x.is_finite()));
+    }
 }
